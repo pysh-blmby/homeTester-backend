@@ -100,13 +100,37 @@ export const createMultiBooking = async (req, res) => {
 // @access  Private
 export const getMyBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ patientId: req.user._id })
-      .populate('labId', 'labName address')
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
+
+    const query = { patientId: req.user._id };
+    if (status) query.status = status;
+
+    const totalItems = await Booking.countDocuments(query);
+    const bookings = await Booking.find(query)
+      .populate('labId', 'labName address city')
       .populate('tests', 'testName originalPrice discountedPrice')
-      .sort({ createdAt: -1 });
-    res.json(bookings);
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: bookings,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -115,16 +139,40 @@ export const getMyBookings = async (req, res) => {
 // @access  Private (Lab Owner)
 export const getLabBookings = async (req, res) => {
   try {
-    const lab = await Lab.findOne({ ownerId: req.user._id });
-    if (!lab) return res.status(404).json({ message: 'Lab not found' });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
 
-    const bookings = await Booking.find({ labId: lab._id })
+    const lab = await Lab.findOne({ ownerId: req.user._id });
+    if (!lab) return res.status(404).json({ success: false, message: 'Lab not found' });
+
+    const query = { labId: lab._id };
+    if (status) query.status = status;
+
+    const totalItems = await Booking.countDocuments(query);
+    const bookings = await Booking.find(query)
       .populate('tests', 'testName')
       .populate('patientId', 'name phone')
-      .sort({ createdAt: -1 });
-    res.json(bookings);
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: bookings,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

@@ -33,6 +33,10 @@ export const applyForLab = async (req, res) => {
 // @access  Public
 export const getPublicLabs = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const keyword = req.query.keyword
       ? {
           $or: [
@@ -42,10 +46,28 @@ export const getPublicLabs = async (req, res) => {
         }
       : {};
 
-    const labs = await Lab.find({ ...keyword, status: 'Approved' });
-    res.json(labs);
+    const query = { ...keyword, status: 'Approved' };
+    const totalItems = await Lab.countDocuments(query);
+    const labs = await Lab.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ rating: -1, createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: labs,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

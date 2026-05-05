@@ -41,4 +41,10 @@ const bookingSchema = new mongoose.Schema({
   reportUrl: { type: String }, // Cloudinary PDF URL
 }, { timestamps: true });
 
+bookingSchema.index({ patientId: 1 });
+bookingSchema.index({ labId: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ paymentStatus: 1 });
+bookingSchema.index({ createdAt: -1 });
+
 export default mongoose.model('Booking', bookingSchema);

@@ -26,10 +26,32 @@ export const createTest = async (req, res) => {
 // @access  Public
 export const getLabTests = async (req, res) => {
   try {
-    const tests = await Test.find({ labId: req.params.labId });
-    res.json(tests);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { labId: req.params.labId };
+    const totalItems = await Test.countDocuments(query);
+    const tests = await Test.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: tests,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -38,6 +60,10 @@ export const getLabTests = async (req, res) => {
 // @access  Public
 export const searchTests = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const keyword = req.query.keyword
       ? {
           $or: [
@@ -47,15 +73,28 @@ export const searchTests = async (req, res) => {
         }
       : {};
 
-    // Find tests and populate the lab info
-    const tests = await Test.find({ ...keyword })
+    const totalItems = await Test.countDocuments(keyword);
+    const tests = await Test.find(keyword)
       .populate('labId', 'labName address city rating reviewCount homeCollectionAvailable operatingTimings')
-      .sort({ discountedPrice: 1 }); // Sort by lowest price first
+      .skip(skip)
+      .limit(limit)
+      .sort({ discountedPrice: 1 })
+      .lean();
 
-    // Grouping logic could be done here or frontend. We send all matching tests.
-    res.json(tests);
+    res.json({
+      success: true,
+      data: tests,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

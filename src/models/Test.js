@@ -16,6 +16,9 @@ const testSchema = new mongoose.Schema({
   category: { type: String, required: true }, // e.g., "Blood", "Urine", "Full Body"
 }, { timestamps: true });
 
+testSchema.index({ testName: 1 });
+testSchema.index({ category: 1 });
+testSchema.index({ createdAt: -1 });
 testSchema.index({ testName: 'text' });
 
 export default mongoose.model('Test', testSchema);

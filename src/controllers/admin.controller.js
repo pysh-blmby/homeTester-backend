@@ -73,3 +73,117 @@ export const updateLabStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get all labs (Paginated)
+// @route   GET /api/admin/labs
+// @access  Private (Super Admin)
+export const getLabs = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
+
+    const query = {};
+    if (status) query.status = status;
+
+    const totalItems = await Lab.countDocuments(query);
+    const labs = await Lab.find(query)
+      .populate('ownerId', 'name phone')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: labs,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all bookings (Paginated)
+// @route   GET /api/admin/bookings
+// @access  Private (Super Admin)
+export const getBookings = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
+
+    const query = {};
+    if (status) query.status = status;
+
+    const totalItems = await Booking.countDocuments(query);
+    const bookings = await Booking.find(query)
+      .populate('patientId', 'name phone')
+      .populate('labId', 'labName')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: bookings,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all users (Paginated)
+// @route   GET /api/admin/users
+// @access  Private (Super Admin)
+export const getUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const role = req.query.role;
+
+    const query = {};
+    if (role) query.role = role;
+
+    const totalItems = await User.countDocuments(query);
+    const users = await User.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        hasNextPage: page < Math.ceil(totalItems / limit),
+        hasPrevPage: page > 1,
+        limit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

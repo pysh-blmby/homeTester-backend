@@ -41,4 +41,8 @@ const userSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
+userSchema.index({ role: 1 });
+userSchema.index({ labApplicationStatus: 1 });
+userSchema.index({ createdAt: -1 });
+
 export default mongoose.model('User', userSchema);

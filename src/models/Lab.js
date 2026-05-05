@@ -34,6 +34,11 @@ const labSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Add text indexing for search
+labSchema.index({ labName: 1 });
+labSchema.index({ city: 1 });
+labSchema.index({ pincode: 1 });
+labSchema.index({ status: 1 });
+labSchema.index({ createdAt: -1 });
 labSchema.index({ labName: 'text', city: 'text', pincode: 'text' });
 
 export default mongoose.model('Lab', labSchema);
